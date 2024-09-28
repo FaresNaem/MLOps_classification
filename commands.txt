@@ -9,9 +9,9 @@ curl -X 'POST' \
   -H 'Content-Type: multipart/form-data' \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJCYXJhayJ9.8ggQPBHbfKW6Mpb_QAOGiqNX7LcF6Zepg_OJ98rQnQQ' \
   -F 'image=@POC_0.jpg;type=image/jpeg' \
-  -F 'designation=title' \
-  -F 'description=description1' \
-  -F 'category=3'
+  -F 'designation=title10' \
+  -F 'description=description10' \
+  -F 'category=10'
 
 
 
@@ -34,3 +34,11 @@ git checkout main   # Switch to the main branch (if not already on it)
 git pull origin main # (Optional) Pull changes from the remote
 ____
 ###############################
+
+UPLOAD_DIR="C:\Users\user\Documents\DS_WB\images_uploaded" uvicorn main:app --host 0.0.0.0 --port 8000
+
+##############################
+
+docker run -e UPLOAD_DIR="/custom/upload/path" -p 80:80 my-fastapi-app
+
+#############################

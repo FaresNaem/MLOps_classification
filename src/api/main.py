@@ -97,7 +97,10 @@ async def admin_route(request: Request, db: Session = Depends(get_db)):
 
 
 # Define a directory to store uploaded images
-UPLOAD_DIR = r"C:\Users\user\Documents\DS_WB\images_uploaded"
+##UPLOAD_DIR = r"C:\Users\user\Documents\DS_WB\images_uploaded"
+# Get UPLOAD_DIR from environment variables, defaulting to './uploads' if not set
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+
 
 
 @app.post("/add-product-data")
