@@ -1,5 +1,8 @@
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from fastapi import HTTPException, Depends, Request
+from database import get_user, SessionLocal
+from sqlalchemy.orm import Session
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "your_secret_key"
@@ -30,27 +33,85 @@ def verify_access_token(token: str):
         return None
 
 
-"""   
-# Decorator to check if user is admin
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from fastapi import HTTPException, Depends, Request
+from database import get_user, SessionLocal
+from sqlalchemy.orm import Session
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+
+
+# Password hash utility
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# JWT utility to create a token
+def create_access_token(data: dict):
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# JWT utility to verify a token
+def verify_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")  # Get the 'sub' field from the token (user's username)
+        if username is None:
+            return None
+        return {"username": username}
+    except JWTError:
+        return None
+
+
+# Dependency to get a database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Decorator to check if the user is admin
 def admin_required():
     def decorator(func):
-        async def wrapper(*args, **kwargs):
-            token = kwargs.get("token")
-            if not token:
+        async def wrapper(request: Request, db: Session = Depends(get_db)):
+            token = request.headers.get("Authorization")
+            if not token or not token.startswith("Bearer "):
                 raise HTTPException(status_code=403, detail="Not authenticated")
+
+            token = token[len("Bearer "):]  # Extract the actual token part
             try:
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 username: str = payload.get("sub")
-                user = get_user(next(get_db()), username)
+                if username is None:
+                    raise HTTPException(status_code=403, detail="Invalid token")
+
+                # Get user from the database
+                user = get_user(db, username)
+                if not user:
+                    raise HTTPException(status_code=403, detail="User not found")
+
+                # Check if the user is an admin
                 if user.role != "admin":
                     raise HTTPException(status_code=403, detail="Not authorized")
+
             except JWTError:
                 raise HTTPException(status_code=403, detail="Not authenticated")
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
 
-"""
+            # Proceed with the wrapped function
+            return await func(request, db)
+
+        return wrapper
+
+    return decorator
 
 if __name__ == "__main__":
     # Test examples

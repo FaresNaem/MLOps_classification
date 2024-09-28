@@ -12,9 +12,9 @@ import numpy as np
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from database import create_user, get_user
 from database import SessionLocal  # Import the session maker
-from util_auth import create_access_token, verify_password, get_password_hash, verify_access_token
+from util_auth import create_access_token, verify_password, get_password_hash, verify_access_token, admin_required
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends, Request
 
 # Load vectorizer and model globally when the app starts
 vectorizer_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'Tfidf_vectorizer.joblib')
@@ -87,3 +87,9 @@ async def predict_category(
     predicted_class = predict_classification(model, vectorizer, designation, description, image)
 
     return {"predicted_class": int(predicted_class[0])}
+
+
+@app.get("/admin-only")
+@admin_required()
+async def admin_route(request: Request, db: Session = Depends(get_db)):
+    return {"message": "Welcome, admin!"}
