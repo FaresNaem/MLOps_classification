@@ -113,6 +113,7 @@ def admin_required():
 
     return decorator
 
+
 if __name__ == "__main__":
     # Test examples
     # 1. Hash a password

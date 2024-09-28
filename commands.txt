@@ -1,2 +1,28 @@
+#curl
+
 curl -X GET "http://localhost:8000/admin-only" \
      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzbG1hbiJ9.y3wFYLqOEWOu9ftMXW11YwyKnAS5CWVOFWq3W6iICgo"
+---
+
+
+
+
+# git ###########################
+
+cd /path/to/your/project
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/FaresNaem/deefinity_Challenge.git
+git push -u origin main
+
+___________
+
+cd /path/to/your/project
+git status          # Check current branch and repository status
+git remote -v       # Verify the remote repository
+git checkout main   # Switch to the main branch (if not already on it)
+git pull origin main # (Optional) Pull changes from the remote
+____
+###############################
