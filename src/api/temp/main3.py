@@ -131,4 +131,3 @@ async def add_product_api(
     except Exception as e:
         # If an error occurs, raise an HTTPException
         raise HTTPException(status_code=500, detail=f"Error saving product: {str(e)}")
-

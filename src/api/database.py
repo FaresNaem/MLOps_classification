@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, DateT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+from sqlalchemy.orm import Session
 
 # Database connection string
 DATABASE_URL = "postgresql://postgres:123@localhost:5432/postgres"
@@ -29,8 +30,10 @@ class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String, nullable=False)  # Path to the image file
+    designation = Column(Text, nullable=False)  # Product text title
     description = Column(Text, nullable=False)  # Product text description
     category = Column(String, nullable=False)  # Product category (predicted or labeled)
+    state = Column(Integer, default=0)  # state = 1 if the image has been used before for model training, 0 otherwise
 
 
 # Log table for storing events such as retraining, data addition, errors, etc.
@@ -51,8 +54,13 @@ def create_tables():
 
 
 # Example: Function to add a new product to the database
-def add_product(session, image_path, description, category):
-    new_product = Product(image_path=image_path, description=description, category=category)
+def add_product(session: Session, image_path: str, designation: str, description: str, category: str):
+    new_product = Product(
+        image_path=image_path,
+        designation=designation,  # Storing the title/designation
+        description=description,
+        category=category
+    )
     session.add(new_product)
     session.commit()
 
@@ -71,6 +79,10 @@ def get_user(session, username: str):
 
 # Function to create a new user in the database
 def create_user(session, username: str, password_hash: str, role: str = "user"):
+    # Check if the username already exists
+    existing_user = get_user(session, username)
+    if existing_user:
+        raise ValueError(f"User with username '{username}' already exists.")
     new_user = User(username=username, password_hash=password_hash, role=role)
     session.add(new_user)
     session.commit()
@@ -88,10 +100,10 @@ if __name__ == "__main__":
 
     try:
         # Create a new user
-        user = create_user(session, "john_doe2", "hashed_password2")
+        user = create_user(session, "mahatma", "mahatmahashed_password2", "user")
 
         # Add a new product
-        add_product(session, "prod2.jpg", "A great product2", "electronics2")
+        add_product(session, "prod2.jpg", "A great product2", "electronics2", '3')
 
         # Log an event
         log_event(session, user.id, "Added a new product")

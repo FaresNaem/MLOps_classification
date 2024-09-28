@@ -1,0 +1,22 @@
+@app.post("/add-product-data")
+@admin_required()  # Decorator checks for admin privileges
+async def add_product_api(
+        request: Request,  # Add request parameter
+        session: Session = Depends(get_db),  # Database session dependency
+        image: UploadFile = File(...),  # UploadFile from form input
+        designation: str = Form(...),  # 'designation' as a product title
+        description: str = Form(...),
+        category: str = Form(...)
+):
+    try:
+        # Extract the filename from the uploaded file and use it as the image path
+        image_path = image.filename  # This is the string of the file name
+
+        # Call the function to add product data to the database
+        add_product(session, image_path, designation, description, category)
+
+        # Return a successful response
+        return {"message": "Product added successfully"}
+    except Exception as e:
+        # If an error occurs, raise an HTTPException
+        raise HTTPException(status_code=500, detail=f"Error saving product: {str(e)}")

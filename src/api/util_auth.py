@@ -80,22 +80,38 @@ def get_db():
 
 
 # Decorator to check if the user is admin
+from fastapi import Request, HTTPException, Depends
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
+from functools import wraps
+
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+
+
 def admin_required():
     def decorator(func):
-        async def wrapper(request: Request, db: Session = Depends(get_db)):
+        @wraps(func)
+        async def wrapper(request: Request, session: Session = Depends(get_db), *args, **kwargs):
+            # Extract the token from the authorization header
             token = request.headers.get("Authorization")
+
             if not token or not token.startswith("Bearer "):
                 raise HTTPException(status_code=403, detail="Not authenticated")
 
             token = token[len("Bearer "):]  # Extract the actual token part
+
             try:
+                # Decode the JWT token
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 username: str = payload.get("sub")
+
                 if username is None:
                     raise HTTPException(status_code=403, detail="Invalid token")
 
-                # Get user from the database
-                user = get_user(db, username)
+                # Fetch the user from the database using the session
+                user = get_user(session, username)
+
                 if not user:
                     raise HTTPException(status_code=403, detail="User not found")
 
@@ -103,11 +119,11 @@ def admin_required():
                 if user.role != "admin":
                     raise HTTPException(status_code=403, detail="Not authorized")
 
-            except JWTError:
-                raise HTTPException(status_code=403, detail="Not authenticated")
+            except JWTError as e:
+                raise HTTPException(status_code=403, detail=f"Authentication error: {str(e)}")
 
-            # Proceed with the wrapped function
-            return await func(request, db)
+            # Call the wrapped function
+            return await func(request, session=session, *args, **kwargs)
 
         return wrapper
 

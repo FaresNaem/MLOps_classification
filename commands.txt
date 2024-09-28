@@ -3,7 +3,15 @@
 curl -X GET "http://localhost:8000/admin-only" \
      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzbG1hbiJ9.y3wFYLqOEWOu9ftMXW11YwyKnAS5CWVOFWq3W6iICgo"
 ---
-
+curl -X 'POST' \
+  'http://localhost:8000/add-product-data' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJCYXJhayJ9.8ggQPBHbfKW6Mpb_QAOGiqNX7LcF6Zepg_OJ98rQnQQ' \
+  -F 'image=@POC_0.jpg;type=image/jpeg' \
+  -F 'designation=title' \
+  -F 'description=description1' \
+  -F 'category=3'
 
 
 
