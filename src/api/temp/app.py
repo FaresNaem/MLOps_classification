@@ -25,13 +25,17 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Hardcoded users for demonstration
 users_db = {
-    "user": {"username": "user", "full_name": "Normal User", "email": "user@example.com", "hashed_password": "user", "disabled": False},
-    "admin": {"username": "admin", "full_name": "Admin User", "email": "admin@example.com", "hashed_password": "admin", "disabled": False}
+    "user": {"username": "user", "full_name": "Normal User", "email": "user@example.com", "hashed_password": "user",
+             "disabled": False},
+    "admin": {"username": "admin", "full_name": "Admin User", "email": "admin@example.com", "hashed_password": "admin",
+              "disabled": False}
 }
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class User(BaseModel):
     username: str
@@ -39,8 +43,10 @@ class User(BaseModel):
     full_name: Optional[str] = None
     disabled: Optional[bool] = None
 
+
 class UserInDB(User):
     hashed_password: str
+
 
 # Function to register or retrieve F1 Score metric from Prometheus
 def register_f1_score_metric():
@@ -51,6 +57,7 @@ def register_f1_score_metric():
         f1_score_summary = REGISTRY._names_to_collectors['fastapi_f1_score']
         logging.info("Metric 'fastapi_f1_score' already exists in the Prometheus registry.")
     return f1_score_summary
+
 
 # Prometheus metrics
 prediction_counter = Counter('fastapi_predictions_total', 'Total number of predictions made')
@@ -84,17 +91,21 @@ logging.info("Vectorizer loaded successfully.")
 X_train_text = np.load('src/data/X_train_tfidf_balanced.npy')
 train_image_features = np.load('src/data/train_image_features_balanced.npy')
 y_train = np.load('src/data/Y_train_balanced.npy')
-logging.info(f"Balanced training data loaded successfully. Shape of X_train_text: {X_train_text.shape}, train_image_features: {train_image_features.shape}")
+logging.info(
+    f"Balanced training data loaded successfully. Shape of X_train_text: {X_train_text.shape}, train_image_features: {train_image_features.shape}")
+
 
 # Function to verify password
 def verify_password(plain_password, hashed_password):
     return plain_password == hashed_password
+
 
 # Function to get user from database
 def get_user(db, username: str):
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
+
 
 # Function to authenticate user
 def authenticate_user(fake_db, username: str, password: str):
@@ -104,6 +115,7 @@ def authenticate_user(fake_db, username: str, password: str):
     if not verify_password(password, user.hashed_password):
         return False
     return user
+
 
 # Route to obtain the token
 @app.post("/token", response_model=Token)
@@ -117,6 +129,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     return {"access_token": form_data.username, "token_type": "bearer"}
 
+
 # Function to get current user
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     user = get_user(users_db, token)
@@ -128,13 +141,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         )
     return user
 
+
 # Admin retrain endpoint
 @app.post("/retrain/")
 async def retrain_model(token: str = Depends(oauth2_scheme)):
     user = await get_current_user(token)
     if user.username != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
-    
+
     logging.info("Admin is triggering model retraining.")
     try:
         subprocess.run(["python", "src/retrain_model.py"], check=True)
@@ -142,6 +156,7 @@ async def retrain_model(token: str = Depends(oauth2_scheme)):
     except subprocess.CalledProcessError as e:
         logging.error(f"Retraining failed: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Retraining failed")
+
 
 # Function to preprocess image
 def preprocess_image(image, target_size=(224, 224)):
@@ -151,16 +166,18 @@ def preprocess_image(image, target_size=(224, 224)):
     image = preprocess_input(image)
     return expand_dims(image, axis=0)
 
+
 # Function to calculate F1-score and log it
 @f1_score_summary.time()  # Prometheus metric decorator to track time
 def calculate_f1_score():
     logging.info("Calculating F1-score...")
     predictions = model.predict([X_train_text, train_image_features])
     predicted_classes = np.argmax(predictions, axis=1)
-    
+
     f1 = f1_score(y_train, predicted_classes, average='weighted')
     logging.info(f"F1-score calculated: {f1}")
     return f1
+
 
 # Function to save updated training data
 def save_updated_training_data(X_train_text_new, train_image_features_new, y_train_new):
@@ -169,6 +186,7 @@ def save_updated_training_data(X_train_text_new, train_image_features_new, y_tra
     np.save('src/data/train_image_features_balanced.npy', train_image_features_new)
     np.save('src/data/Y_train_balanced.npy', y_train_new)
     logging.info(f"Training data updated and saved successfully.")
+
 
 # Function to add new data to the training set
 def add_new_data_to_training_set(text_features, image_features, predicted_class):
@@ -188,12 +206,13 @@ def add_new_data_to_training_set(text_features, image_features, predicted_class)
     train_image_features = train_image_features_new
     y_train = y_train_new
 
+
 # Background task for updating training data and recalculating F1-score
 def background_tasks_after_prediction(processed_text, image_features, predicted_class):
     add_new_data_to_training_set(processed_text, image_features, predicted_class)
     f1_after = calculate_f1_score()
     logging.info(f"New F1-score after update: {f1_after}")
-    
+
     # Automatic retraining if F1-score falls below threshold
     if f1_after < 0.90:
         logging.info("F1-score below threshold. Triggering automatic retraining.")
@@ -202,9 +221,11 @@ def background_tasks_after_prediction(processed_text, image_features, predicted_
         except subprocess.CalledProcessError as e:
             logging.error(f"Automatic retraining failed: {e}")
 
+
 # Prediction endpoint
 @app.post("/predict/")
-async def predict(background_tasks: BackgroundTasks, designation: str = Form(...), description: str = Form(...), file: UploadFile = File(...), token: str = Depends(oauth2_scheme)):
+async def predict(background_tasks: BackgroundTasks, designation: str = Form(...), description: str = Form(...),
+                  file: UploadFile = File(...), token: str = Depends(oauth2_scheme)):
     user = await get_current_user(token)
     logging.info(f"User {user.username} is making a prediction request.")
 
@@ -235,6 +256,7 @@ async def predict(background_tasks: BackgroundTasks, designation: str = Form(...
     background_tasks.add_task(background_tasks_after_prediction, processed_text, image_features, predicted_class[0])
 
     return response
+
 
 # Startup event to calculate F1-score
 @app.on_event("startup")

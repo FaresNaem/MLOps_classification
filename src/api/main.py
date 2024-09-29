@@ -16,6 +16,7 @@ from util_auth import create_access_token, verify_password, get_password_hash, v
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Depends, Request
 from uuid import uuid4
+from util_model import train_model_on_new_data, evaluate_model_on_untrained_data
 
 # Load vectorizer and model globally when the app starts
 vectorizer_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'Tfidf_vectorizer.joblib')
@@ -141,3 +142,38 @@ async def add_product_api(
         # If an error occurs, raise an HTTPException
         raise HTTPException(status_code=500, detail=f"Error saving product: {str(e)}")
 
+
+# New endpoint to evaluate the model on untrained data
+@app.get("/evaluate")
+@admin_required()  # Only admins can access this endpoint
+async def evaluate_model_endpoint(db: Session = Depends(get_db)):
+    try:
+        # Call the function that evaluates the model
+        f1, report = evaluate_model_on_untrained_data(model, vectorizer, db)
+
+        # Return the F1 score and classification report
+        return {
+            "f1_score": f1,
+            "classification_report": report
+        }
+    except Exception as e:
+        # Handle exceptions and return an error message
+        raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
+
+
+# New endpoint to train the model
+@app.get("/train")
+@admin_required()  # Only admins can access this endpoint
+async def train_model_endpoint(db: Session = Depends(get_db)):
+    try:
+        # Call the function that trains the model
+        f1, report = train_model_on_new_data(model, vectorizer, db)
+
+        # Return the F1 score and classification report
+        return {
+            "f1_score": f1,
+            "classification_report": report
+        }
+    except Exception as e:
+        # Handle exceptions and return an error message
+        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
