@@ -59,7 +59,7 @@ prediction_counter = Counter('fastapi_predictions_total', 'Total number of predi
 f1_score_summary = register_f1_score_metric()
 
 # Logging setup
-log_file_path = "logs/app.log"
+log_file_path = "../logs/app.log"
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 file_handler = logging.FileHandler(log_file_path)
 console_handler = logging.StreamHandler()

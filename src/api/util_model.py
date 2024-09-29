@@ -31,4 +31,7 @@ def predict_classification(model, vectorizer, designation: str, description: str
     prediction = model.predict([processed_text, image_features])
     predicted_class = np.argmax(prediction, axis=1)
 
-    return predicted_class
+    # Get confidence score (maximum probability)
+    confidence = np.max(prediction, axis=1)
+
+    return {'predicted_class': predicted_class, 'confidence': confidence}

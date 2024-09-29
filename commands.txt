@@ -1,3 +1,11 @@
+
+###################################
+cd MLOps_classification/src/api
+uvicorn main:app --reload
+#########################################
+pytest test_app.py
+
+#########################################
 #curl
 
 curl -X GET "http://localhost:8000/admin-only" \
@@ -12,10 +20,9 @@ curl -X 'POST' \
   -F 'designation=title10' \
   -F 'description=description10' \
   -F 'category=10'
+############################################
 
-
-
-# git ###########################
+# git ########################################
 
 cd /path/to/your/project
 git init
@@ -24,9 +31,7 @@ git commit -m "Initial commit"
 git branch -M main
 git remote add origin https://github.com/FaresNaem/deefinity_Challenge.git
 git push -u origin main
-
-___________
-
+___
 cd /path/to/your/project
 git status          # Check current branch and repository status
 git remote -v       # Verify the remote repository

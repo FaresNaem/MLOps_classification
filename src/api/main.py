@@ -84,10 +84,17 @@ async def predict_category(
     image_data = await file.read()
     image = Image.open(BytesIO(image_data))
 
-    # Call the prediction function
-    predicted_class = predict_classification(model, vectorizer, designation, description, image)
+    # Call the prediction function (returns both predicted class and confidence)
+    predicted_result = predict_classification(model, vectorizer, designation, description, image)
+    predicted_class = predicted_result['predicted_class']
+    confidence = predicted_result['confidence']
+    predicted_class_int = int(predicted_class[0])
+    confidence_float = float(confidence[0])
 
-    return {"predicted_class": int(predicted_class[0])}
+    return {
+        "predicted_class": predicted_class_int,  # Ensure predicted class is an integer
+        "confidence": confidence_float  # Ensure confidence score is a float
+    }
 
 
 @app.get("/admin-only")
@@ -100,7 +107,6 @@ async def admin_route(request: Request, db: Session = Depends(get_db)):
 ##UPLOAD_DIR = r"C:\Users\user\Documents\DS_WB\images_uploaded"
 # Get UPLOAD_DIR from environment variables, defaulting to './uploads' if not set
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
-
 
 
 @app.post("/add-product-data")
