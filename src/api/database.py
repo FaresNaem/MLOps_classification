@@ -90,6 +90,21 @@ def create_user(session, username: str, password_hash: str, role: str = "user"):
     return new_user
 
 
+def get_untrained_products(session: Session):
+    """
+    Retrieve all products with state = 0 (untrained products).
+    """
+    return session.query(Product).filter(Product.state == 0).all()
+
+
+def update_product_state(session: Session, product_ids):
+    """
+    Update the state of products to 1 (indicating they have been used in training).
+    """
+    session.query(Product).filter(Product.id.in_(product_ids)).update({"state": 1}, synchronize_session='fetch')
+    session.commit()
+
+
 # Example usage
 if __name__ == "__main__":
     # Create all tables
