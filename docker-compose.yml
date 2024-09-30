@@ -1,0 +1,28 @@
+services:
+  web:
+    build: .
+    container_name: mlops_classification_app
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:123@db:5432/postgres
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:13
+    container_name: mlops_classification_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
